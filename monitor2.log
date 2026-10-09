@@ -1,4 +1,0 @@
-[12:49:10] 运行 #2  status=in_progress conclusion=None
-[12:49:10]   步骤  1 completed    concl=success  Set up job
-[12:49:10]   步骤  2 completed    concl=success  检出本仓库
-[12:49:10]   步骤  3 in_progress  concl=-  释放磁盘空间

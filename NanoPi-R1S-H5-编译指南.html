@@ -194,6 +194,59 @@
     所以「保留 WiFi」这件事本身不难，难的只是<strong>别再漏掉那个驱动包</strong>——本指南给的就是一个不会漏的编译套件。
   </div>
 
+  <div class="callout ok">
+    <div class="t">✅ 已经编好了 —— 2026-10-09 实机云端编译成功</div>
+    <p style="margin:0 0 10px">
+      本指南描述的全部配置已经跑通，固件已自动发布到 GitHub Release，可直接下载刷机。
+      构建版本号 <code>r38135-0c4cd0f9920a</code>，基于 ImmortalWrt <code>v25.12.2</code>。
+    </p>
+    <p style="margin:0 0 10px">
+      <strong>下载页：</strong>
+      <a href="https://github.com/abbbbottt/nanopi-r1s-h5-immortalwrt/releases/tag/v25.12.2-20261009-2">
+        github.com/abbbbottt/nanopi-r1s-h5-immortalwrt/releases/tag/v25.12.2-20261009-2
+      </a>
+    </p>
+    <div class="tw">
+      <table>
+        <thead>
+          <tr><th>产物</th><th>大小</th><th>说明</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>...-ext4-sdcard.img.gz</code></td>
+            <td>192.7 MB</td>
+            <td>可读写单分区，<strong>和你原来那版结构一致</strong>，跑 Docker 方便</td>
+          </tr>
+          <tr>
+            <td><code>...-squashfs-sdcard.img.gz</code></td>
+            <td>151.1 MB</td>
+            <td>只读根 + 可写 overlay，网页升级 / 恢复出厂更省心（<strong>推荐</strong>）</td>
+          </tr>
+          <tr>
+            <td><code>...-initramfs-kernel.bin</code></td>
+            <td>133.4 MB</td>
+            <td>救援 / 内存启动用，日常无需</td>
+          </tr>
+          <tr>
+            <td><code>...-nanopi-r1s-h5.manifest</code></td>
+            <td>小</td>
+            <td>镜像内<strong>全部 426 个软件包</strong>的逐行清单，验证驱动是否在里面的最快办法</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin:10px 0 0">
+      <strong>WiFi 驱动已核实进镜像</strong>（下载 <code>.manifest</code> 逐行核对，非猜测）：
+    </p>
+    <pre style="margin:8px 0 0;background:var(--code-bg);padding:12px;border-radius:8px;font-size:12.5px;overflow:auto">kmod-rtl8189es      - 6.12.103.2025.09.27~0a5d0411-r1
+wpad-basic-mbedtls  - 2025.08.26~ca266cc2-r2
+kmod-cfg80211       - 6.12.103.6.18.39-r1
+kmod-mac80211       - 6.12.103.6.18.39-r1
+kmod-mmc            - 6.12.103-r1
+wireless-regdb      - 2026.05.30-r1
+iwinfo / rpcd-mod-iwinfo / hostapd-utils</pre>
+  </div>
+
   <div class="toc">
     <strong style="font-size:13.5px">本页内容</strong>
     <ol>
