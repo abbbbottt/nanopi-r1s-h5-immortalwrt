@@ -7,3 +7,10 @@ meta.json
 check.txt
 *.img
 *.img.gz
+# 从 Release 抓来核对用的清单 / 配置快照
+manifest.txt
+*.buildinfo
+*.buildinfo.txt
+# 本地工具与抓取的包索引
+_pkgcheck/
+git-api-push.py

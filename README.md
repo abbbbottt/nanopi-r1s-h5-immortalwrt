@@ -78,6 +78,60 @@ iw dev                     # 应能看到 wlan0
 iwinfo                     # 查看射频与信号
 ```
 
+## 使用 USB 的 4G/5G 上网设备（上网卡 / 随身 WiFi / 手机共享）
+
+固件已内置全套 USB 移动宽带驱动（官方 25.12.2 镜像默认**一个都没有**）。
+
+| 设备形态 | 内核驱动 | 拨号方式 |
+|---|---|---|
+| 手机 USB 共享、多数「随身 WiFi」 | `kmod-usb-net-rndis` | 自动出现网卡，当普通以太网口用 DHCP |
+| 新式随身 WiFi、部分华为设备 | `kmod-usb-net-cdc-ncm` / `huawei-cdc-ncm` | LuCI 建 NCM 接口 |
+| 高通 5G 模块（RM500Q / MH5000 等） | `kmod-usb-net-qmi-wwan` | `uqmi`（LuCI：QMI 协议） |
+| MBIM 模式模块 | `kmod-usb-net-cdc-mbim` | `umbim`（LuCI：MBIM 协议） |
+| AT 口（查信号 / 发短信 / 解 PIN） | `kmod-usb-serial-option` + `comgt` | `picocom` / `sms-tool` |
+
+**插上后先确认识别情况：**
+
+```sh
+dmesg | tail -30              # 看有没有 new high-speed USB device
+lsusb -t                      # 看设备挂上了哪个驱动（rndis_host/cdc_ether/qmi_wwan）
+ip link                       # RNDIS/ECM 网卡会直接出现在这里
+ls /dev/ttyUSB*               # QMI/MBIM 模块的 AT 口
+```
+
+**情况 A：`ip link` 里出现了 `usb0` / `eth2`（RNDIS/ECM）**
+
+```sh
+uci set network.wwan=interface
+uci set network.wwan.proto='dhcp'
+uci set network.wwan.device='usb0'
+uci commit network
+/etc/init.d/network reload
+```
+
+**情况 B：高通模块（QMI）**
+
+```sh
+# 先确认模块已切到 QMI 模式
+qmicli -d /dev/cdc-wdm0 --dms-get-manufacturer
+# LuCI → 网络 → 接口 → 新建，协议选「QMI Cellular」，填 APN
+```
+
+**情况 C：模块只认 MBIM** —— 同上，协议选「MBIM Cellular」，用 `umbim`。
+
+**排障：**
+
+| 现象 | 原因 | 处理 |
+|---|---|---|
+| `lsusb` 里是光驱/存储设备 | 上网卡默认处在 CD-ROM 模式 | 装好的 `usb-modeswitch` 会自动切换，重启或重新插拔 |
+| 上表都有但不通 | APN 不对 | 查运营商 APN（如 `cmnet` / `3gnet` / `ctnet`） |
+| 完全识别不到 | 供电不足 | R1S H5 的 USB 口带不动大功率 5G 模块，**必须用带外接供电的 USB Hub** |
+| QMI 拨不上 | 频段/制式 | 用 LuCI 里的「3G/4G 信息」和「ModemBand」页面看信号，必要时锁频段 |
+
+> 内核模块与固件内核配置哈希强绑定（本固件是 `6.12.103~dbdb90a7...`，官方源是
+> `b78b4d5e...`），**所以官方源里的 `kmod-*` 装不进来**，必须像本项目这样编进固件。
+> 想增减驱动就改 `configs/nanopi-r1s-h5.config` 重新编译。
+
 ## 已知风险与应对
 
 **RTL8189ES 是树外驱动，社区长期反馈它在较新内核上开 AP 模式可能导致 kernel panic / 重启循环。**

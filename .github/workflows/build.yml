@@ -104,9 +104,22 @@ jobs:
           grep -E 'CONFIG_TARGET_sunxi_cortexa53_DEVICE_friendlyarm_nanopi-r1s-h5=y' .config || true
           grep -E 'CONFIG_PACKAGE_kmod-rtl8189es=y' .config || true
           grep -E 'CONFIG_PACKAGE_wpad-basic-mbedtls=y' .config || true
+          grep -E 'CONFIG_PACKAGE_kmod-usb-net-(rndis|cdc-ncm|qmi-wwan)=y' .config || true
+          # 下面这些是硬性闸门：任一条没生效就当场中止，绝不放行一个残废固件
           for k in \
             CONFIG_TARGET_sunxi_cortexa53_DEVICE_friendlyarm_nanopi-r1s-h5=y \
-            CONFIG_PACKAGE_kmod-rtl8189es=y
+            CONFIG_PACKAGE_kmod-rtl8189es=y \
+            CONFIG_PACKAGE_kmod-usb-net-rndis=y \
+            CONFIG_PACKAGE_kmod-usb-net-cdc-ether=y \
+            CONFIG_PACKAGE_kmod-usb-net-cdc-ncm=y \
+            CONFIG_PACKAGE_kmod-usb-net-cdc-mbim=y \
+            CONFIG_PACKAGE_kmod-usb-net-qmi-wwan=y \
+            CONFIG_PACKAGE_kmod-usb-serial-option=y \
+            CONFIG_PACKAGE_kmod-wwan=y \
+            CONFIG_PACKAGE_usb-modeswitch=y \
+            CONFIG_PACKAGE_uqmi=y \
+            CONFIG_PACKAGE_umbim=y \
+            CONFIG_PACKAGE_luci-proto-qmi=y
           do
             grep -q "$k" .config || { echo "::error::关键配置 $k 未生效，请检查 $CONFIG_FILE"; exit 1; }
           done
@@ -185,6 +198,8 @@ jobs:
             - 上游源码：${{ env.REPO_URL }} @ `${{ env.REPO_BRANCH }}` (${{ env.SRC_COMMIT }}, ${{ env.SRC_DATE }})
             - 目标平台：`sunxi` / `cortexa53`，内核 6.12
             - 板载 WiFi：Realtek RTL8189ETV，驱动 `kmod-rtl8189es`
+            - USB 移动宽带：RNDIS / CDC-ECM / NCM / QMI / MBIM 全系列驱动，
+              支持 4G/5G 上网卡、随身 WiFi、手机 USB 共享（uqmi / umbim / comgt）
             - 内置：LuCI 中文、PassWall、OpenClash、Samba4、Aria2、Transmission、Docker、DiskMan
             - 刷写：解压 `.img.gz` 得到 `.img`，用 Rufus / balenaEtcher 写入 TF 卡
           files: output/*
