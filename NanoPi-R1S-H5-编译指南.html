@@ -195,15 +195,15 @@
   </div>
 
   <div class="callout ok">
-    <div class="t">✅ 已经编好了 —— 2026-10-09 实机云端编译成功</div>
+    <div class="t">✅ 已经编好了 —— 2026-10-09 实机云端编译成功（含 USB 4G/5G）</div>
     <p style="margin:0 0 10px">
       本指南描述的全部配置已经跑通，固件已自动发布到 GitHub Release，可直接下载刷机。
-      构建版本号 <code>r38135-0c4cd0f9920a</code>，基于 ImmortalWrt <code>v25.12.2</code>。
+      构建版本号 <code>r38135-0c4cd0f9920a</code>，基于 ImmortalWrt <code>v25.12.2</code>（内核 6.12.103）。
     </p>
     <p style="margin:0 0 10px">
       <strong>下载页：</strong>
-      <a href="https://github.com/abbbbottt/nanopi-r1s-h5-immortalwrt/releases/tag/v25.12.2-20261009-2">
-        github.com/abbbbottt/nanopi-r1s-h5-immortalwrt/releases/tag/v25.12.2-20261009-2
+      <a href="https://github.com/abbbbottt/nanopi-r1s-h5-immortalwrt/releases/tag/v25.12.2-20261009-3">
+        github.com/abbbbottt/nanopi-r1s-h5-immortalwrt/releases/tag/v25.12.2-20261009-3
       </a>
     </p>
     <div class="tw">
@@ -213,38 +213,50 @@
         </thead>
         <tbody>
           <tr>
-            <td><code>...-ext4-sdcard.img.gz</code></td>
-            <td>192.7 MB</td>
-            <td>可读写单分区，<strong>和你原来那版结构一致</strong>，跑 Docker 方便</td>
-          </tr>
-          <tr>
             <td><code>...-squashfs-sdcard.img.gz</code></td>
-            <td>151.1 MB</td>
+            <td>153.9 MB</td>
             <td>只读根 + 可写 overlay，网页升级 / 恢复出厂更省心（<strong>推荐</strong>）</td>
           </tr>
           <tr>
+            <td><code>...-ext4-sdcard.img.gz</code></td>
+            <td>196.5 MB</td>
+            <td>可读写单分区，和你原来那版结构一致，跑 Docker 方便</td>
+          </tr>
+          <tr>
             <td><code>...-initramfs-kernel.bin</code></td>
-            <td>133.4 MB</td>
+            <td>136.0 MB</td>
             <td>救援 / 内存启动用，日常无需</td>
           </tr>
           <tr>
             <td><code>...-nanopi-r1s-h5.manifest</code></td>
-            <td>小</td>
-            <td>镜像内<strong>全部 426 个软件包</strong>的逐行清单，验证驱动是否在里面的最快办法</td>
+            <td>14 KB</td>
+            <td>镜像内<strong>全部 472 个软件包</strong>的逐行清单，验证驱动是否在里面的最快办法</td>
           </tr>
         </tbody>
       </table>
     </div>
     <p style="margin:10px 0 0">
-      <strong>WiFi 驱动已核实进镜像</strong>（下载 <code>.manifest</code> 逐行核对，非猜测）：
+      <strong>板载 WiFi 驱动已核实进镜像</strong>（下载 <code>.manifest</code> 逐行核对，非猜测）：
     </p>
     <pre style="margin:8px 0 0;background:var(--code-bg);padding:12px;border-radius:8px;font-size:12.5px;overflow:auto">kmod-rtl8189es      - 6.12.103.2025.09.27~0a5d0411-r1
 wpad-basic-mbedtls  - 2025.08.26~ca266cc2-r2
-kmod-cfg80211       - 6.12.103.6.18.39-r1
-kmod-mac80211       - 6.12.103.6.18.39-r1
-kmod-mmc            - 6.12.103-r1
+kmod-cfg80211 / kmod-mac80211 / kmod-mmc
 wireless-regdb      - 2026.05.30-r1
 iwinfo / rpcd-mod-iwinfo / hostapd-utils</pre>
+    <p style="margin:12px 0 0">
+      <strong>USB 4G/5G 移动宽带驱动同样已核实进镜像</strong>（第 7 章用得到）：
+    </p>
+    <pre style="margin:8px 0 0;background:var(--code-bg);padding:12px;border-radius:8px;font-size:12.5px;overflow:auto">kmod-usb-net-rndis / cdc-ether / cdc-ncm / cdc-mbim / qmi-wwan
+kmod-usb-net-huawei-cdc-ncm / ipheth / cdc-eem / cdc-subset / sierrawireless
+kmod-usb-serial-option / wwan / qualcomm / sierrawireless
+kmod-usb-acm / kmod-usb-wdm / kmod-wwan
+usb-modeswitch - 2025.10.04~9b4d0a6e-r1
+uqmi / umbim / comgt / libqmi / libmbim / picocom / sms-tool / modemmanager
+luci-proto-qmi / mbim / ncm / 3g
+luci-app-3ginfo-lite / modemband / sms-tool-js</pre>
+    <p style="margin:10px 0 0;font-size:13px;color:var(--ink-3)">
+      镜像包总数从 426（仅 WiFi 版）增加到 <strong>472</strong>，新增的 46 个全部是移动宽带相关及其依赖。
+    </p>
   </div>
 
   <div class="toc">

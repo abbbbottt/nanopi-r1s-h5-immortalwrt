@@ -1,7 +1,21 @@
 # ImmortalWrt for 友善 NanoPi R1S H5（保留板载 WiFi）
 
 用 GitHub Actions 云端编译 **ImmortalWrt 25.12.2**（内核 6.12）固件，目标平台 `sunxi/cortexa53`，
-并**保留板载 WiFi**。
+并**保留板载 WiFi**、**支持 USB 4G/5G 上网设备**。
+
+## 已经编好了，可直接下载
+
+不想自己编的话，用现成的 Release（2026-10-09 编译成功，`r38135-0c4cd0f9920a`）：
+
+👉 https://github.com/abbbbottt/nanopi-r1s-h5-immortalwrt/releases/tag/v25.12.2-20261009-3
+
+| 产物 | 大小 |
+|---|---|
+| `...-squashfs-sdcard.img.gz` | 153.9 MB（推荐，网页升级友好） |
+| `...-ext4-sdcard.img.gz` | 196.5 MB |
+| `...-initramfs-kernel.bin` | 136.0 MB（救援用） |
+
+镜像内共 **472 个软件包**，已逐行核对 `rtl8189es`（板载 WiFi）与全套 USB 移动宽带驱动都在。
 
 ## 这块板子的 WiFi 到底是什么
 

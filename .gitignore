@@ -7,8 +7,9 @@ meta.json
 check.txt
 *.img
 *.img.gz
-# 从 Release 抓来核对用的清单 / 配置快照
-manifest.txt
+# 从 Release 抓来核对用的清单 / 配置快照（一律用通配，别列具体文件名）
+manifest*.txt
+*3.buildinfo
 *.buildinfo
 *.buildinfo.txt
 # 本地工具与抓取的包索引
