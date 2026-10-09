@@ -522,8 +522,13 @@ uci commit wireless &amp;&amp; wifi reload</code></pre>
         </tr>
         <tr>
           <td>TF 卡空间不够 / 装不了 Docker</td>
-          <td>rootfs 默认只扩到 512MB</td>
-          <td>用内置的 DiskMan 扩第二分区，或把 <code>configs</code> 里的 <code>CONFIG_TARGET_ROOTFS_PARTSIZE</code> 调大重编</td>
+          <td>sunxi 这个 target <strong>不会</strong>在首次启动时自动扩容根分区，卡上可用空间就等于编译时设的 <code>CONFIG_TARGET_ROOTFS_PARTSIZE</code>（当前 <strong>1024MB</strong>）</td>
+          <td>① 用内置的 DiskMan 把第二分区扩到整张卡再 <code>resize2fs</code>（推荐，一次搞定）；② 或把该值调更大重编</td>
+        </tr>
+        <tr>
+          <td>编译到最后报 <code>ext4_allocate_best_fit_partial: failed to allocate ... out of space?</code></td>
+          <td>根文件系统分区太小，装不下所选的全部软件包（<strong>第一次就踩到这个坑</strong>：512MB 差 175 个块）</td>
+          <td>把 <code>configs/*.config</code> 里的 <code>CONFIG_TARGET_ROOTFS_PARTSIZE</code> 调大（现在 1024）后重跑</td>
         </tr>
         <tr>
           <td>编译在 <code>make download</code> 阶段挂掉</td>
