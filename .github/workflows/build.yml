@@ -72,11 +72,14 @@ jobs:
             echo "SRC_DATE=$(git log -1 --date=short --pretty=%ad)"
           } >> $GITHUB_ENV
 
-      - name: ccache 缓存
-        uses: actions/cache@v4
+      # 注意：必须用 restore/save 拆分，而不是 actions/cache@v4。
+      # 官方 actions/cache 的 post 步骤声明了 post-if: success()，
+      # job 一旦失败缓存就不会写回，2 小时的编译成果会全部白费。
+      - name: 恢复 ccache 缓存
+        uses: actions/cache/restore@v4
         with:
           path: /home/runner/.ccache
-          key: ccache-${{ env.REPO_BRANCH }}-${{ github.run_id }}
+          key: ccache-${{ env.REPO_BRANCH }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
             ccache-${{ env.REPO_BRANCH }}-
 
@@ -129,6 +132,25 @@ jobs:
         run: |
           set -o pipefail
           make -j1 V=s 2>&1 | tee -a build.log
+
+      # 关键：即使编译失败也要把 ccache 存回去。
+      # 否则每次重试都要从头编译 2 小时以上。
+      - name: 保存 ccache 缓存（无论成败都保存）
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: /home/runner/.ccache
+          key: ccache-${{ env.REPO_BRANCH }}-${{ github.run_id }}-${{ github.run_attempt }}
+
+      # 失败时把编译日志单独传上来，省得去翻几万行 job log
+      - name: 失败时上传编译日志
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log-failure-${{ github.run_number }}
+          path: openwrt/build.log
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: 整理产物
         run: |

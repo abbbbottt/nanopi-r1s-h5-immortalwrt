@@ -1,0 +1,6 @@
+# 本地调试产物，不要提交
+job.log
+monitor.log
+monitor.py
+*.img
+*.img.gz
