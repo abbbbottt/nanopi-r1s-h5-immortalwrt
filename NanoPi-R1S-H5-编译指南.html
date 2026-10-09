@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>友善 NanoPi R1S H5 · ImmortalWrt 最新版编译与 WiFi 保留指南</title>
+<style>
+  :root{
+    --bg:#f6f7f9;
+    --card:#ffffff;
+    --ink:#1b1f24;
+    --ink-2:#4a5560;
+    --ink-3:#7a8794;
+    --line:#e3e7ec;
+    --brand:#0b6bcb;
+    --brand-soft:#eaf2fc;
+    --ok:#1a7f47;
+    --ok-soft:#e8f6ee;
+    --warn:#a8620a;
+    --warn-soft:#fdf3e4;
+    --danger:#c0392b;
+    --danger-soft:#fdecea;
+    --code-bg:#f2f4f7;
+    --radius:12px;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font:15px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  }
+  .wrap{max-width:900px;margin:0 auto;padding:0 20px 80px}
+
+  /* ---------- header ---------- */
+  header.hero{
+    background:linear-gradient(160deg,#0b6bcb 0%,#0a58a5 100%);
+    color:#fff;
+    padding:44px 20px 38px;
+    margin-bottom:28px;
+  }
+  header.hero .inner{max-width:900px;margin:0 auto}
+  header.hero .kicker{
+    font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+    opacity:.82;margin-bottom:12px;
+  }
+  header.hero h1{margin:0 0 12px;font-size:27px;line-height:1.35;font-weight:650}
+  header.hero p{margin:0;opacity:.92;font-size:14.5px;max-width:720px}
+  .hero-facts{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+  .hero-facts span{
+    background:rgba(255,255,255,.16);
+    border:1px solid rgba(255,255,255,.24);
+    border-radius:999px;padding:5px 13px;font-size:12.5px;
+  }
+
+  /* ---------- typography ---------- */
+  h2{
+    font-size:19px;margin:38px 0 14px;font-weight:650;
+    padding-left:12px;border-left:4px solid var(--brand);
+    line-height:1.4;
+  }
+  h3{font-size:15.5px;margin:24px 0 8px;font-weight:650;color:var(--ink)}
+  p{margin:10px 0}
+  ul,ol{margin:10px 0 10px 0;padding-left:22px}
+  li{margin:5px 0}
+  code{
+    font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+    font-size:13px;background:var(--code-bg);border:1px solid var(--line);
+    border-radius:5px;padding:1px 5px;color:#123;word-break:break-word;
+  }
+  a{color:var(--brand);text-decoration:none;border-bottom:1px solid rgba(11,107,203,.3)}
+  a:hover{border-bottom-color:var(--brand)}
+  strong{font-weight:650}
+
+  /* ---------- cards ---------- */
+  .card{
+    background:var(--card);border:1px solid var(--line);
+    border-radius:var(--radius);padding:20px 22px;margin:16px 0;
+    box-shadow:0 1px 2px rgba(16,24,40,.04);
+  }
+  .card > :first-child{margin-top:0}
+  .card > :last-child{margin-bottom:0}
+
+  .grid{display:grid;gap:14px}
+  @media(min-width:720px){ .grid.two{grid-template-columns:1fr 1fr} .grid.three{grid-template-columns:repeat(3,1fr)} }
+
+  .stat{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px 18px;
+  }
+  .stat .label{font-size:12px;color:var(--ink-3);letter-spacing:.05em;margin-bottom:6px}
+  .stat .value{font-size:16px;font-weight:650;line-height:1.45}
+  .stat .sub{font-size:12.5px;color:var(--ink-2);margin-top:5px}
+
+  .callout{
+    border-radius:var(--radius);padding:14px 18px;margin:16px 0;
+    border:1px solid;font-size:14px;
+  }
+  .callout .t{font-weight:650;margin-bottom:4px}
+  .callout.info{background:var(--brand-soft);border-color:#c8ddf5}
+  .callout.ok{background:var(--ok-soft);border-color:#c4e6d3}
+  .callout.warn{background:var(--warn-soft);border-color:#f2ddb9}
+  .callout.danger{background:var(--danger-soft);border-color:#f5cfc9}
+  .callout.ok .t{color:var(--ok)}
+  .callout.warn .t{color:var(--warn)}
+  .callout.danger .t{color:var(--danger)}
+  .callout.info .t{color:var(--brand)}
+
+  /* ---------- table ---------- */
+  .tw{overflow-x:auto;margin:14px 0;border:1px solid var(--line);border-radius:var(--radius);background:var(--card)}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:560px}
+  th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+  th{background:#fafbfc;font-weight:650;color:var(--ink-2);font-size:12.5px;letter-spacing:.03em;white-space:nowrap}
+  tr:last-child td{border-bottom:none}
+  .pill{
+    display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:999px;
+    border:1px solid;line-height:1.6;white-space:nowrap;
+  }
+  .pill.ok{background:var(--ok-soft);border-color:#c4e6d3;color:var(--ok)}
+  .pill.warn{background:var(--warn-soft);border-color:#f2ddb9;color:var(--warn)}
+  .pill.bad{background:var(--danger-soft);border-color:#f5cfc9;color:var(--danger)}
+  .pill.info{background:var(--brand-soft);border-color:#c8ddf5;color:var(--brand)}
+
+  /* ---------- code ---------- */
+  .codewrap{position:relative;margin:12px 0}
+  pre{
+    margin:0;background:#1e2229;color:#e6edf3;border-radius:10px;
+    padding:14px 16px;overflow-x:auto;font-size:12.8px;line-height:1.65;
+    font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+  }
+  pre code{background:none;border:none;padding:0;color:inherit;font-size:inherit}
+  pre .c{color:#8b98a5}
+  pre .k{color:#79c0ff}
+  pre .s{color:#a5d6a3}
+  .copy{
+    position:absolute;top:8px;right:8px;
+    background:rgba(255,255,255,.12);color:#cfd8e3;border:1px solid rgba(255,255,255,.2);
+    border-radius:6px;padding:3px 10px;font-size:11.5px;cursor:pointer;
+    font-family:inherit;transition:.15s;
+  }
+  .copy:hover{background:rgba(255,255,255,.22);color:#fff}
+
+  /* ---------- steps ---------- */
+  .steps{counter-reset:s;list-style:none;padding:0;margin:16px 0}
+  .steps > li{
+    counter-increment:s;position:relative;padding:0 0 0 44px;margin:0 0 18px;
+  }
+  .steps > li::before{
+    content:counter(s);position:absolute;left:0;top:1px;
+    width:28px;height:28px;border-radius:50%;
+    background:var(--brand);color:#fff;font-size:13px;font-weight:650;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .steps > li > .st{font-weight:650;display:block;margin-bottom:4px}
+
+  .filetree{
+    font-family:"SFMono-Regular",Consolas,Menlo,monospace;font-size:12.5px;
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:14px 16px;white-space:pre;overflow-x:auto;color:var(--ink-2);line-height:1.6;
+  }
+  .filetree b{color:var(--ink);font-weight:650}
+
+  hr{border:none;border-top:1px solid var(--line);margin:34px 0}
+  footer{color:var(--ink-3);font-size:12.5px;text-align:center;padding:10px 0}
+  .toc{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px 22px;margin:18px 0}
+  .toc ol{margin:6px 0 0;padding-left:20px;columns:1}
+  @media(min-width:640px){.toc ol{columns:2}}
+  .toc li{margin:4px 0;font-size:13.5px}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="inner">
+    <div class="kicker">ImmortalWrt Build Guide</div>
+    <h1>友善 NanoPi R1S H5 —— 编译到最新版并保留板载 WiFi</h1>
+    <p>目标：ImmortalWrt 25.12.2（内核 6.12）· sunxi/cortexa53 · 板载 Realtek RTL8189ETV 无线可用 · 云端编译，Windows 本地零环境依赖。</p>
+    <div class="hero-facts">
+      <span>RTL8189ETV ≠ AP6212</span>
+      <span>树外驱动 kmod-rtl8189es</span>
+      <span>官方源已内置该驱动</span>
+      <span>GitHub Actions 免本地环境</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="callout info">
+    <div class="t">先说结论</div>
+    你手上那版固件老，是因为它基于很旧的 ImmortalWrt 分支。<strong>最新稳定版 25.12.2 依然支持这块板子</strong>，
+    而且官方的软件源里<strong>已经带了 RTL8189ES 的驱动包</strong>，内核设备树里 WiFi 节点也是现成的。
+    所以「保留 WiFi」这件事本身不难，难的只是<strong>别再漏掉那个驱动包</strong>——本指南给的就是一个不会漏的编译套件。
+  </div>
+
+  <div class="toc">
+    <strong style="font-size:13.5px">本页内容</strong>
+    <ol>
+      <li><a href="#hw">硬件真相：你的 WiFi 芯片是什么</a></li>
+      <li><a href="#ver">版本选择：25.12 / 6.18 / 23.05 怎么选</a></li>
+      <li><a href="#how">方案：GitHub Actions 云端编译</a></li>
+      <li><a href="#kit">交付物：目录结构与文件</a></li>
+      <li><a href="#pkg">固件内置了什么</a></li>
+      <li><a href="#flash">刷机与开启 WiFi</a></li>
+      <li><a href="#risk">已知风险与排障</a></li>
+      <li><a href="#alt">备选方案</a></li>
+    </ol>
+  </div>
+
+  <h2 id="hw">1 · 硬件真相：你的 WiFi 芯片是什么</h2>
+
+  <p>绝大多数 NanoPi 教程都在讲 NanoPi R1 / R2S，而 R1S 这一代换了料。先把事实钉死：</p>
+
+  <div class="grid three">
+    <div class="stat">
+      <div class="label">WiFi 芯片</div>
+      <div class="value">Realtek RTL8189ETV</div>
+      <div class="sub">SDIO 接口，挂在 mmc1 上</div>
+    </div>
+    <div class="stat">
+      <div class="label">驱动形态</div>
+      <div class="value">树外驱动</div>
+      <div class="sub">kmod-rtl8189es，上游内核不含</div>
+    </div>
+    <div class="stat">
+      <div class="label">规格</div>
+      <div class="value">2.4GHz b/g/n · 1x1</div>
+      <div class="sub">IPX/U.FL 外置天线口，无蓝牙</div>
+    </div>
+  </div>
+
+  <div class="callout warn">
+    <div class="t">容易踩的坑</div>
+    NanoPi R1（H3 那台）用的是博通 <strong>AP6212</strong>，靠主线的 <code>brcmfmac</code> 驱动，开箱可用。
+    但 <strong>R1S 系列换成了 Realtek RTL8189ETV</strong>，主线内核里<strong>没有</strong>它的驱动。
+    如果你按 R1 的教程去编，刷完会发现「无线」菜单里空空如也——不是硬件坏，是驱动没编进去。
+  </div>
+
+  <p>好消息是，两边都对得上：</p>
+  <ul>
+    <li>ImmortalWrt 源码树里有一个专门的包 <code>package/kernel/rtl8189es</code>，输出的就是 <code>kmod-rtl8189es</code>；</li>
+    <li>官方 25.12.2 的 <code>sunxi/cortexa53</code> 内核模块源里能查到
+      <code>kmod-rtl8189es  6.12.103.2025.09.27~0a5d0411-r1</code>（2025-09-27 的驱动快照，比你手上固件新得多）；</li>
+    <li>主线内核的设备树里 <code>&amp;mmc1</code> 已经带 <code>wifi_pwrseq</code> 供电时序和 <code>rtl8189etv: wifi@1</code> 子节点，
+      硬件描述是现成的，不需要自己打补丁。</li>
+  </ul>
+
+  <h2 id="ver">2 · 版本选择</h2>
+
+  <p>「最新」有三个含义，各自的代价不一样。本指南默认选<strong>最稳的那个「最新」</strong>：</p>
+
+  <div class="tw">
+    <table>
+      <thead>
+        <tr><th>分支 / 标签</th><th>内核</th><th>板载 WiFi 情况</th><th>建议</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>v25.12.2</strong><br><span style="color:var(--ink-3);font-size:12px">最新正式版</span></td>
+          <td>6.12.103</td>
+          <td>驱动为 2025-09-27 快照，官方已出该机镜像 <span class="pill ok">推荐</span></td>
+          <td>插件源最新、包最全，首选</td>
+        </tr>
+        <tr>
+          <td>openwrt-25.12<br><span style="color:var(--ink-3);font-size:12px">滚动分支</span></td>
+          <td>6.12.x</td>
+          <td>同系列，跟随上游小版本更新</td>
+          <td>想自动吃补丁可以用</td>
+        </tr>
+        <tr>
+          <td>master<br><span style="color:var(--ink-3);font-size:12px">开发快照</span></td>
+          <td>6.18.x</td>
+          <td>驱动也支持，但整套是开发态</td>
+          <td>折腾可以，别当主力 <span class="pill warn">谨慎</span></td>
+        </tr>
+        <tr>
+          <td>v24.10.x</td>
+          <td>6.6</td>
+          <td>同样是 kmod-rtl8189es</td>
+          <td>更保守的稳定选择</td>
+        </tr>
+        <tr>
+          <td>v23.05.x</td>
+          <td>5.15</td>
+          <td>社区反馈：<strong>客户端/扫描可用，AP 模式不稳</strong></td>
+          <td>只在 AP 崩了才退回这里</td>
+        </tr>
+        <tr>
+          <td>21.02.x</td>
+          <td>5.4</td>
+          <td>社区反馈：AP + 客户端都稳</td>
+          <td>软件源已 EOL，插件很旧 <span class="pill bad">已过时</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 id="how">3 · 方案：GitHub Actions 云端编译</h2>
+
+  <p>
+    编译 OpenWrt 需要 Linux（Cygwin 不行，因为文件系统大小写不敏感）。你在 Windows 上，
+    与其装 WSL2 或 Docker Desktop、再等两小时本地烧 CPU，不如<strong>直接让 GitHub 的机器替你编</strong>——
+    免费额度完全够用，跑完直接把固件下载下来。
+  </p>
+
+  <ol class="steps">
+    <li>
+      <span class="st">把编译套件推到你自己的 GitHub 仓库</span>
+      新建一个仓库，把本指南交付的整个目录推上去（含 <code>.github/workflows/build.yml</code>）。
+      或者直接 Fork 一个现成的 Actions 模板仓库，再把本目录的文件覆盖进去。
+    </li>
+    <li>
+      <span class="st">打开 Actions 的写权限</span>
+      仓库 <strong>Settings → Actions → General → Workflow permissions</strong>，
+      选 <strong>Read and write permissions</strong>。不开这个，最后发布 Release 会 403。
+    </li>
+    <li>
+      <span class="st">手动触发一次</span>
+      进 <strong>Actions</strong> 标签页，左侧选 <code>Build ImmortalWrt (NanoPi R1S H5)</code>，
+      点 <strong>Run workflow</strong>。以后每周一北京时间 04:00 也会自动跑一次。
+    </li>
+    <li>
+      <span class="st">等编译完成（约 1~2 小时）</span>
+      工作流会先清盘、装依赖、拉源码、更新 feeds、注入自定义文件，
+      然后<strong>强制校验</strong>两项关键配置：设备是否选中、<code>kmod-rtl8189es</code> 是否编入。
+      任何一项没生效就直接报错中止——这就是「不会漏掉 WiFi 驱动」的保险。
+    </li>
+    <li>
+      <span class="st">下载产物</span>
+      在该次运行的 <strong>Artifacts</strong> 里下载，同时会自动发一个 <strong>Release</strong>，方便长期保存。
+    </li>
+  </ol>
+
+  <p>产物文件名：</p>
+  <div class="codewrap">
+    <button class="copy">复制</button>
+<pre><code>immortalwrt-25.12.2-sunxi-cortexa53-friendlyarm_nanopi-r1s-h5-ext4-sdcard.img.gz
+immortalwrt-25.12.2-sunxi-cortexa53-friendlyarm_nanopi-r1s-h5-squashfs-sdcard.img.gz
+profiles.json / sha256sums / config.seed / build.log</code></pre>
+  </div>
+
+  <div class="callout info">
+    <div class="t">ext4 还是 squashfs？</div>
+    <strong>ext4</strong>：单一可读写分区，和你原来那版结构一致，跑 Docker、装大体积包更舒服。<br>
+    <strong>squashfs</strong>：只读根 + 可写 overlay，改崩了可以一键恢复出厂，网页升级也更省心。
+    两个都编出来了，随意挑，建议日常用 squashfs。
+  </div>
+
+  <h2 id="kit">4 · 交付物：目录结构与文件</h2>
+
+  <div class="filetree"><b>nanopi-r1s-h5-immortalwrt/</b>
+├── <b>.github/workflows/build.yml</b>     云端编译工作流（清盘 / 依赖 / feeds / 校验 / 发布）
+├── <b>configs/nanopi-r1s-h5.config</b>    编译配置片段（追加到 .config 再 defconfig）
+├── <b>diy-part1.sh</b>                    feeds 更新前执行（默认空操作，留扩展位）
+├── <b>diy-part2.sh</b>                    把 files/ 注入源码树并补执行位
+├── <b>files/</b>                           直接进固件的文件覆盖层
+│   └── etc/
+│       ├── <b>init.d/nanopi-wifi</b>       S99 初始化无线监管域 / SSID（默认不开射频）
+│       └── <b>uci-defaults/99-nanopi-init</b>  主机名 / 时区 / NTP / 启用上面的服务
+└── <b>README.md</b>                        同内容速查版</div>
+
+  <h3>几个设计上的取舍，值得说明</h3>
+  <ul>
+    <li>
+      <strong>配置写成「片段」而不是完整 .config。</strong>
+      因为 <code>make defconfig</code> 会自动补齐默认值；写错的选项会被静默忽略，不会让编译失败。
+      比塞一份几百 KB 的完整 .config 健壮得多，也方便你一眼看懂改了什么。
+    </li>
+    <li>
+      <strong>WiFi 初始化放在 <code>/etc/init.d/</code> 而不是 <code>/etc/uci-defaults/</code>。</strong>
+      首次开机时 <code>/etc/config/wireless</code> 是网络服务在 uci-defaults 之后才生成的。
+      放在 <code>START=99</code>（晚于 S40network）才拿得到 <code>radio0</code> 段，否则脚本会空跑。
+      脚本自带幂等标记，只生效一次。
+    </li>
+    <li>
+      <strong>默认不开射频。</strong> 见下一节的已知风险——这颗芯片的树外驱动有崩过机的历史，
+      先让你手动确认一次更稳妥。想开机自动开，把脚本里那一行注释去掉即可。
+    </li>
+  </ul>
+
+  <h2 id="pkg">5 · 固件内置了什么</h2>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>分类</th><th>内容</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>无线</strong><br><span class="pill ok">核心</span></td>
+          <td><code>kmod-rtl8189es</code>、<code>kmod-mmc</code>、<code>kmod-cfg80211</code>、<code>kmod-mac80211</code>、<code>wpad-basic-mbedtls</code>、<code>iw</code>、<code>iwinfo</code>、<code>hostapd-utils</code></td>
+        </tr>
+        <tr>
+          <td><strong>界面</strong></td>
+          <td><code>luci</code>、<code>luci-ssl</code>、中文语言包、Argon 主题 + 主题配置</td>
+        </tr>
+        <tr>
+          <td><strong>科学上网</strong></td>
+          <td><code>luci-app-passwall</code>、<code>luci-app-openclash</code>、<code>xray-core</code>、<code>sing-box</code>、<code>v2ray-geodata</code>、<code>chinadns-ng</code>、<code>dnsmasq-full</code>、<code>kmod-tun</code>、<code>ipset</code></td>
+        </tr>
+        <tr>
+          <td><strong>存储 / 下载</strong></td>
+          <td>Samba4、Aria2、Transmission、qBittorrent、FileBrowser、DiskMan、Dockerman</td>
+        </tr>
+        <tr>
+          <td><strong>文件系统</strong></td>
+          <td>ext4 / exfat / ntfs3 / vfat，USB 存储与 UAS 支持，自动挂载</td>
+        </tr>
+        <tr>
+          <td><strong>实用工具</strong></td>
+          <td>ttyd 终端、UPnP、DDNS、WOL、命令面板、htop、nano、sftp-server</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout warn">
+    <div class="t">关于 512MB 内存</div>
+    R1S H5 只有 512MB RAM。上面这套是「大杂烩」配置，全塞进去开机大概占掉 100~150MB，
+    跑 Samba + Aria2 没问题，但 <strong>Docker 会比较吃力</strong>。
+    只想当路由器用的话，把 <code>luci-app-dockerman</code>、<code>luci-app-openclash</code>、
+    <code>luci-app-transmission</code> 那几行删掉，会清爽很多。
+    另外 OpenClash 会拖入 Ruby，体积偏大；只做代理的话 PassWall 更划算。
+  </div>
+
+  <h2 id="flash">6 · 刷机与开启 WiFi</h2>
+
+  <h3>刷机</h3>
+  <ol>
+    <li>解压 <code>.img.gz</code> 得到 <code>.img</code>。<strong>必须先解压</strong>，别拿 <code>.gz</code> 直接刷。</li>
+    <li>用 <strong>Rufus</strong>（Windows）或 <strong>balenaEtcher</strong> 把 <code>.img</code> 写入 TF 卡。</li>
+    <li>卡插回板子，上电。默认地址 <code>http://192.168.1.1</code>，用户名 <code>root</code>，密码为空。</li>
+    <li>网口映射：<code>eth0</code> = WAN，<code>eth1</code> = LAN（板载千兆口是 eth0 走的 RTL8211E，USB 转的那口是另一路）。</li>
+  </ol>
+
+  <div class="callout info">
+    <div class="t">从你现有的老固件升级？</div>
+    因为你原来那版（<code>ext4-sdcard</code>）也是同一个 target，但跨了大版本、内核和分区表都变了，
+    <strong>建议整卡重刷，不要用网页升级</strong>。等你已经在跑本项目的固件之后，
+    以后 LuCI → 系统 → 备份/升级固件，直接上传新的 <code>*-sdcard.img.gz</code>（不用解压）并勾选保留配置，就能热升级。
+  </div>
+
+  <h3>开启 WiFi</h3>
+  <p>固件默认不自动开射频。两种开法：</p>
+
+  <p><strong>网页（推荐）</strong>：LuCI → <strong>网络 → 无线</strong> → 点 <code>radio0</code> 的「启用」→ 改 SSID / 加密方式 / 密码 → 保存并应用。</p>
+
+  <p><strong>命令行：</strong></p>
+  <div class="codewrap">
+    <button class="copy">复制</button>
+<pre><code><span class="c"># 打开射频并配一个 WPA2 热点</span>
+uci set wireless.radio0.disabled='0'
+uci set wireless.radio0.country='CN'
+uci set wireless.radio0.channel='6'
+uci set wireless.default_radio0.ssid='MyWiFi'
+uci set wireless.default_radio0.encryption='psk2'
+uci set wireless.default_radio0.key='换成你的密码'
+uci commit wireless
+wifi reload</code></pre>
+  </div>
+
+  <p><strong>验证是否真的起来了：</strong></p>
+  <div class="codewrap">
+    <button class="copy">复制</button>
+<pre><code><span class="c"># 1. 驱动有没有正常加载（应该看到 rtl8189es 的版权行和 mmc1 上的 SDIO 设备）</span>
+dmesg | grep -iE 'rtl8189|8189es|mmc1'
+
+<span class="c"># 2. 无线接口是否存在</span>
+iw dev
+ip link show wlan0
+
+<span class="c"># 3. 射频状态（disabled 应变成 no）</span>
+iwinfo
+uci show wireless | grep disabled
+
+<span class="c"># 4. 拿它当客户端连上级 WiFi</span>
+uci set wireless.radio0.disabled='0'
+uci set wireless.sta=wifi-iface
+uci set wireless.sta.device='radio0'
+uci set wireless.sta.mode='sta'
+uci set wireless.sta.network='wan'
+uci set wireless.sta.ssid='上级WiFi名'
+uci set wireless.sta.key='上级WiFi密码'
+uci commit wireless &amp;&amp; wifi reload</code></pre>
+  </div>
+
+  <h2 id="risk">7 · 已知风险与排障</h2>
+
+  <div class="callout danger">
+    <div class="t">最大的不确定性：AP 模式下可能 kernel panic</div>
+    RTL8189ES 是<strong>树外驱动</strong>，长期有社区反馈它在较新内核上开 AP 会导致内核崩溃、重启循环。
+    已知的具体案例是某项目在 <strong>内核 5.15</strong> 上，该驱动开 AP 会 panic，
+    所以他们干脆把 AP 默认关掉，只保留客户端模式。
+    <br><br>
+    本方案用的是 <strong>内核 6.12 + 2025-09-27 的驱动快照</strong>，比那些报告里的版本新不少，
+    <strong>有可能已经修好，但不能保证</strong>——最终得你自己实机验证。所以固件默认不开射频，
+    就是给你留一次「手动确认」的机会。
+  </div>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>现象</th><th>可能原因</th><th>处理</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>LuCI 里根本没有「无线」菜单</td>
+          <td>要么 <code>kmod-rtl8189es</code> 没编进去，要么没装 wpad</td>
+          <td>跑 <code>opkg list-installed | grep -E 'rtl8189|wpad'</code>（25.12 是 <code>apk list</code>）确认；缺了就补装或重编</td>
+        </tr>
+        <tr>
+          <td><code>iw dev</code> 里没有 wlan0</td>
+          <td>驱动没绑定到 SDIO 设备 / 固件加载失败</td>
+          <td><code>dmesg | grep -i mmc1</code> 看有没有探测到设备；<code>lsmod | grep 8189</code>；必要时 <code>modprobe rtl8189es</code></td>
+        </tr>
+        <tr>
+          <td>开 AP 后立刻重启 / 死机</td>
+          <td>驱动 bug（见上方红框）</td>
+          <td>① 先用 STA 模式；② 退回 <code>v23.05.x</code>；③ 换 USB 无线网卡；④ 只走有线</td>
+        </tr>
+        <tr>
+          <td>能连上但没网</td>
+          <td>防火墙 zone 没把 wlan0 划进 lan</td>
+          <td>LuCI → 网络 → 防火墙，把 wlan0 所属接口加进 <code>lan</code> zone，允许转发到 wan</td>
+        </tr>
+        <tr>
+          <td>TF 卡空间不够 / 装不了 Docker</td>
+          <td>rootfs 默认只扩到 512MB</td>
+          <td>用内置的 DiskMan 扩第二分区，或把 <code>configs</code> 里的 <code>CONFIG_TARGET_ROOTFS_PARTSIZE</code> 调大重编</td>
+        </tr>
+        <tr>
+          <td>编译在 <code>make download</code> 阶段挂掉</td>
+          <td>个别源码包下载超时</td>
+          <td>重跑一次工作流即可；GitHub 上偶发，非配置问题</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>如果想自己看编译日志</h3>
+  <p>
+    每次构建的 <code>build.log</code> 会一起打包进产物里。失败时先看日志末尾，
+    再配合「并行失败时单线程重试」那一步的输出定位——单线程重试会给出完整的出错现场。
+  </p>
+
+  <h2 id="alt">8 · 备选方案</h2>
+
+  <div class="grid two">
+    <div class="card">
+      <h3 style="margin-top:0">A · 本地 Docker 编译</h3>
+      <p>想完全掌控、离线反复编，就在 WSL2 或 Docker Desktop 里跑：</p>
+      <div class="codewrap">
+        <button class="copy">复制</button>
+<pre><code>docker run -it --name iwrt \
+  -v "$PWD:/work" -w /work \
+  ubuntu:22.04 bash
+
+<span class="c"># 容器内</span>
+apt update &amp;&amp; apt install -y sudo git
+sudo bash -c 'bash &lt;(curl -s \
+  https://build-scripts.immortalwrt.org/init_build_environment.sh)'
+git clone -b v25.12.2 --single-branch \
+  --filter=blob:none \
+  https://github.com/immortalwrt/immortalwrt openwrt
+cd openwrt &amp;&amp; ./scripts/feeds update -a \
+  &amp;&amp; ./scripts/feeds install -a
+cat ../configs/nanopi-r1s-h5.config &gt;&gt; .config
+make defconfig
+make download -j8
+make -j$(nproc) V=s</code></pre>
+      </div>
+      <p style="font-size:13px;color:var(--ink-3);margin-bottom:0">
+        需要约 25GB 磁盘、8GB 内存起步，首次全量编译 1~2 小时。
+        路径里<strong>不能有空格和非 ASCII 字符</strong>。
+      </p>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0">B · 不编译：官方镜像 + 装驱动</h3>
+      <p>其实官方已经出了这台机器的镜像和驱动包，两步就能用：</p>
+      <div class="codewrap">
+        <button class="copy">复制</button>
+<pre><code><span class="c"># 1. 下载官方 25.12.2 镜像并刷入</span>
+<span class="c">#    https://downloads.immortalwrt.org</span>
+<span class="c">#    /releases/25.12.2/targets/sunxi/</span>
+<span class="c">#    cortexa53/</span>
+
+<span class="c"># 2. 开机后装 WiFi 驱动（25.12 用 apk）</span>
+apk update
+apk add kmod-rtl8189es
+apk add wpad-basic-mbedtls iw iwinfo
+
+<span class="c"># 3. 开射频</span>
+uci set wireless.radio0.disabled='0'
+uci commit wireless &amp;&amp; wifi reload</code></pre>
+      </div>
+      <p style="font-size:13px;color:var(--ink-3);margin-bottom:0">
+        优点：十分钟搞定。缺点：固件是官方原味（英文界面、包很少），
+        想内置插件和中文界面还是得自己编。<br>
+        <strong>注意</strong>：驱动包必须和内核版本对上，所以要装对应版本的内核模块源里的包。
+      </p>
+    </div>
+  </div>
+
+  <hr>
+
+  <footer>
+    ImmortalWrt 25.12.2 · sunxi/cortexa53 · FriendlyARM NanoPi R1S H5 · Realtek RTL8189ETV<br>
+    文档中的包名、内核版本、驱动快照均按 25.12.2 官方源码与软件源逐项核对。
+  </footer>
+
+</div>
+
+<script>
+document.querySelectorAll('.copy').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    var pre = btn.parentNode.querySelector('pre');
+    if(!pre) return;
+    var text = pre.innerText;
+    navigator.clipboard.writeText(text).then(function(){
+      var old = btn.textContent;
+      btn.textContent = '已复制';
+      setTimeout(function(){ btn.textContent = old; }, 1400);
+    }).catch(function(){
+      btn.textContent = '复制失败';
+      setTimeout(function(){ btn.textContent = '复制'; }, 1400);
+    });
+  });
+});
+</script>
+
+</body>
+</html>

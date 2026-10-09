@@ -1,0 +1,30 @@
+#!/bin/sh
+#
+# 首次启动一次性初始化（uci-defaults 会在执行后自动删除本文件）
+#
+
+# 1) 启用板载 WiFi 初始化服务（它在 S99 跑，晚于网络服务，能拿到 radio0）
+/etc/init.d/nanopi-wifi enable 2>/dev/null || true
+
+# 2) 主机名
+uci -q set system.@system[0].hostname='NanoPi-R1S-H5'
+uci -q commit system
+
+# 3) 时区 + 国内 NTP，避免时间不准导致 HTTPS 证书校验失败
+uci -q set system.@system[0].zonename='Asia/Shanghai'
+uci -q set system.@system[0].timezone='CST-8'
+uci -q delete system.ntp.server
+uci -q add_list system.ntp.server='ntp.aliyun.com'
+uci -q add_list system.ntp.server='cn.pool.ntp.org'
+uci -q add_list system.ntp.server='time1.cloud.tencent.com'
+uci -q commit system
+
+# 4) 记录一下这次的构建来源，方便以后排查
+cat > /etc/nanopi-build-info <<'EOF'
+Target : sunxi / cortexa53
+Device : FriendlyARM NanoPi R1S H5 (Allwinner H5, 512MB RAM)
+WiFi   : Realtek RTL8189ETV (SDIO) -> kmod-rtl8189es
+Base   : ImmortalWrt 25.12.2
+EOF
+
+exit 0

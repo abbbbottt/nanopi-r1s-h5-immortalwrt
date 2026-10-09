@@ -1,0 +1,177 @@
+#
+# 云端编译 ImmortalWrt —— 友善 NanoPi R1S H5 (Allwinner H5 / sunxi-cortexa53)
+#
+# 产物：immortalwrt-*-sunxi-cortexa53-friendlyarm_nanopi-r1s-h5-{ext4,squashfs}-sdcard.img.gz
+# 板载 WiFi：Realtek RTL8189ETV，由 kmod-rtl8189es 树外驱动提供
+#
+name: Build ImmortalWrt (NanoPi R1S H5)
+
+on:
+  workflow_dispatch:
+    inputs:
+      ssh:
+        description: '开启 SSH 调试会话 (true / false)'
+        required: false
+        default: 'false'
+  schedule:
+    # 每周一 04:00 (北京时间) 自动重编一次，跟进上游更新
+    - cron: '0 20 * * 0'
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'configs/**'
+      - 'files/**'
+      - 'diy-part*.sh'
+      - '.github/workflows/**'
+
+env:
+  REPO_URL: https://github.com/immortalwrt/immortalwrt
+  # 想更激进可改成 openwrt-25.12（滚动分支）或 master（内核 6.18 开发快照，慎用）
+  REPO_BRANCH: v25.12.2
+  CONFIG_FILE: configs/nanopi-r1s-h5.config
+  DIY_PART1: diy-part1.sh
+  DIY_PART2: diy-part2.sh
+  TZ: Asia/Shanghai
+  CCACHE_DIR: /home/runner/.ccache
+  CCACHE_MAXSIZE: 2G
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+
+    steps:
+      - name: 检出本仓库
+        uses: actions/checkout@v4
+
+      - name: 释放磁盘空间
+        run: |
+          echo "== 清理前 =="; df -h /
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+                      /opt/hostedtoolcache /usr/local/share/boost \
+                      /usr/share/swift /usr/lib/jvm "$AGENT_TOOLSDIRECTORY" || true
+          sudo swapoff -a || true
+          sudo rm -f /mnt/swapfile || true
+          sudo apt-get clean
+          echo "== 清理后 =="; df -h /
+
+      - name: 安装编译依赖
+        run: |
+          sudo bash -c 'bash <(curl -s https://build-scripts.immortalwrt.org/init_build_environment.sh)'
+          ccache --max-size=$CCACHE_MAXSIZE || true
+          ccache -z || true
+
+      - name: 拉取 ImmortalWrt 源码
+        run: |
+          git clone -b $REPO_BRANCH --single-branch --filter=blob:none $REPO_URL openwrt
+          cd openwrt
+          git log -1 --pretty=format:'%H %ad %s' --date=iso; echo
+          {
+            echo "SRC_COMMIT=$(git rev-parse --short HEAD)"
+            echo "SRC_DATE=$(git log -1 --date=short --pretty=%ad)"
+          } >> $GITHUB_ENV
+
+      - name: ccache 缓存
+        uses: actions/cache@v4
+        with:
+          path: /home/runner/.ccache
+          key: ccache-${{ env.REPO_BRANCH }}-${{ github.run_id }}
+          restore-keys: |
+            ccache-${{ env.REPO_BRANCH }}-
+
+      - name: 自定义 feeds (diy-part1)
+        run: bash $GITHUB_WORKSPACE/$DIY_PART1
+
+      - name: 更新并安装 feeds
+        working-directory: ./openwrt
+        run: |
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: 注入自定义文件 (diy-part2)
+        run: bash $GITHUB_WORKSPACE/$DIY_PART2
+
+      - name: 生成 .config 并校验
+        working-directory: ./openwrt
+        run: |
+          cat $GITHUB_WORKSPACE/$CONFIG_FILE >> .config
+          make defconfig
+          echo "---------------- 关键配置校验 ----------------"
+          grep -E 'CONFIG_TARGET_sunxi_cortexa53_DEVICE_friendlyarm_nanopi-r1s-h5=y' .config || true
+          grep -E 'CONFIG_PACKAGE_kmod-rtl8189es=y' .config || true
+          grep -E 'CONFIG_PACKAGE_wpad-basic-mbedtls=y' .config || true
+          for k in \
+            CONFIG_TARGET_sunxi_cortexa53_DEVICE_friendlyarm_nanopi-r1s-h5=y \
+            CONFIG_PACKAGE_kmod-rtl8189es=y
+          do
+            grep -q "$k" .config || { echo "::error::关键配置 $k 未生效，请检查 $CONFIG_FILE"; exit 1; }
+          done
+          cp -f .config $GITHUB_WORKSPACE/output-config.seed
+
+      - name: 下载软件源码包
+        working-directory: ./openwrt
+        run: make download -j$(nproc)
+
+      - name: 编译固件（并行）
+        id: compile
+        continue-on-error: true
+        working-directory: ./openwrt
+        run: |
+          set -o pipefail
+          make -j$(nproc) 2>&1 | tee build.log
+          echo "== 并行编译结束，产物目录： =="
+          ls -lh bin/targets/sunxi/cortexa53/ || true
+
+      - name: 并行失败时单线程重试
+        if: steps.compile.outcome == 'failure'
+        working-directory: ./openwrt
+        run: |
+          set -o pipefail
+          make -j1 V=s 2>&1 | tee -a build.log
+
+      - name: 整理产物
+        run: |
+          mkdir -p $GITHUB_WORKSPACE/output
+          cd openwrt/bin/targets/sunxi/cortexa53
+          ls -lh
+          cp -v *nanopi-r1s-h5* $GITHUB_WORKSPACE/output/ 2>/dev/null || true
+          cp -v profiles.json config.buildinfo sha256sums version.buildinfo $GITHUB_WORKSPACE/output/ 2>/dev/null || true
+          mv -f $GITHUB_WORKSPACE/output-config.seed $GITHUB_WORKSPACE/output/config.seed 2>/dev/null || true
+          cp -v $GITHUB_WORKSPACE/openwrt/build.log $GITHUB_WORKSPACE/output/build.log 2>/dev/null || true
+          {
+            echo "ARTIFACT_NAME=ImmortalWrt-${REPO_BRANCH}-NanoPi-R1S-H5"
+            echo "RELEASE_TAG=${REPO_BRANCH}-$(date +%Y%m%d)-${GITHUB_RUN_NUMBER}"
+          } >> $GITHUB_ENV
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: output/*
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: 发布 Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: ImmortalWrt ${{ env.REPO_BRANCH }} · NanoPi R1S H5 · ${{ env.RELEASE_TAG }}
+          body: |
+            ImmortalWrt ${{ env.REPO_BRANCH }} 自动编译固件（友善 NanoPi R1S H5 / Allwinner H5）
+
+            - 上游源码：${{ env.REPO_URL }} @ `${{ env.REPO_BRANCH }}` (${{ env.SRC_COMMIT }}, ${{ env.SRC_DATE }})
+            - 目标平台：`sunxi` / `cortexa53`，内核 6.12
+            - 板载 WiFi：Realtek RTL8189ETV，驱动 `kmod-rtl8189es`
+            - 内置：LuCI 中文、PassWall、OpenClash、Samba4、Aria2、Transmission、Docker、DiskMan
+            - 刷写：解压 `.img.gz` 得到 `.img`，用 Rufus / balenaEtcher 写入 TF 卡
+          files: output/*
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fail_on_unmatched_files: false
+
+      - name: SSH 调试会话
+        # 失败时也能连进去排查（无条件 always），仅手动触发并填 true 时才启用
+        if: ${{ github.event.inputs.ssh == 'true' && always() }}
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true

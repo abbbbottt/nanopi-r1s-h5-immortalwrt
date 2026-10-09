@@ -1,0 +1,60 @@
+#!/bin/sh /etc/rc.common
+#
+# NanoPi R1S H5 板载 WiFi（Realtek RTL8189ETV）首次启动初始化
+#
+# 为什么不用 /etc/uci-defaults/ 直接改？
+#   因为首次开机时 /etc/config/wireless 是由网络服务在 uci-defaults 之后才生成的，
+#   放在这里（START=99，排在 S40network 之后）才能保证拿到 radio0 段。
+#
+# 只在首次启动生效一次，之后由 /etc/.nanopi-wifi-configured 标记跳过。
+
+START=99
+STOP=10
+USE_PROCD=0
+
+DONE_FLAG=/etc/.nanopi-wifi-configured
+
+apply_defaults() {
+	[ -e "$DONE_FLAG" ] && return 0
+
+	# 无线配置还没生成就自己催一下；还是拿不到就下次开机再来
+	if [ ! -s /etc/config/wireless ]; then
+		wifi config >/dev/null 2>&1 || true
+	fi
+	[ -s /etc/config/wireless ] || return 0
+
+	# 监管域 / 信道 / 带宽
+	uci -q set wireless.radio0.country='CN'
+	uci -q set wireless.radio0.channel='6'
+	uci -q set wireless.radio0.htmode='HT20'
+	uci -q set wireless.radio0.cell_density='0'
+
+	# 默认 SSID，建议进 LuCI 改成自己的名字并加密码
+	uci -q set wireless.default_radio0.ssid='ImmortalWrt'
+
+	# ------------------------------------------------------------------
+	# 安全策略：默认不自动打开射频。
+	# RTL8189ES 这颗树外驱动在部分内核版本上开 AP 会触发 kernel panic，
+	# 所以宁可由你手动确认一次。确认稳定后，把下面这行的注释去掉，
+	# 以后每次开机就会自动开 WiFi。
+	# ------------------------------------------------------------------
+	# uci -q delete wireless.radio0.disabled
+
+	uci -q commit wireless || return 0
+
+	touch "$DONE_FLAG"
+	logger -t nanopi-wifi "board wifi defaults applied (radio kept disabled by default)"
+	return 0
+}
+
+start() {
+	apply_defaults
+}
+
+boot() {
+	apply_defaults
+}
+
+reload() {
+	apply_defaults
+}
